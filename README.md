@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AI Smart Agriculture Decision Agent
 
 The AI Smart Agriculture Decision Agent is a multi-agent backend and Next.js frontend dashboard designed to resolve conflicting agricultural decisions for smallholder farmers. 
@@ -59,3 +60,6 @@ npm install
 npm run dev
 ```
 Dashboard runs on `http://localhost:3000`.
+=======
+# ai-smart-agriculture-agent
+>>>>>>> 52570734ce771249396fcec462ced9233e2ad451
