@@ -1,15 +1,21 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Navigation from "@/components/Navigation";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
-  title: "AI Smart Agriculture Decision Agent",
-  description: "Multimodal AI dashboard for farm management",
+  title: "AgriAgent AI | Multimodal Farm Intelligence & Decision Studio",
+  description: "Enterprise multimodal AI decision engine resolving crop telemetry, satellite weather, vision diagnostics, and commodity market conflicts.",
+  other: {
+    "color-scheme": "dark",
+    "darkreader-lock": "true",
+  },
 };
-
-import Navigation from "@/components/Navigation";
 
 export default function RootLayout({
   children,
@@ -17,12 +23,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} bg-slate-50 text-slate-900 min-h-screen flex flex-col`}>
+    <html lang="en" className="dark scroll-smooth" suppressHydrationWarning>
+      <head>
+        <meta name="color-scheme" content="dark" />
+        <meta name="darkreader-lock" content="true" />
+      </head>
+      <body 
+        className={`${inter.variable} font-sans bg-[#090d16] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500/30 selection:text-emerald-300`}
+        suppressHydrationWarning
+      >
         <Navigation />
-        <div className="flex-1">
+        <main className="flex-1 flex flex-col relative z-10">
           {children}
-        </div>
+        </main>
       </body>
     </html>
   );
