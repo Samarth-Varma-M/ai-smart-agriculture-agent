@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
+import { AccessibilityProvider } from "@/lib/accessibility";
+import SessionProviderWrapper from "@/components/SessionProviderWrapper";
+import Script from "next/script";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -32,11 +35,31 @@ export default function RootLayout({
         className={`${inter.variable} font-sans bg-[#090d16] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500/30 selection:text-emerald-300`}
         suppressHydrationWarning
       >
-        <Navigation />
-        <main className="flex-1 flex flex-col relative z-10">
-          {children}
-        </main>
-      </body>
+        <SessionProviderWrapper>
+          <AccessibilityProvider>
+            <Script 
+              src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" 
+              strategy="afterInteractive" 
+            />
+          <Script id="google-translate-script" strategy="afterInteractive">
+            {`
+              function googleTranslateElementInit() {
+                new window.google.translate.TranslateElement({
+                  pageLanguage: 'en',
+                  includedLanguages: 'en,hi,te,ta,mr,ml,kn,gu,pa,bn,or',
+                  layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
+                }, 'google_translate_element');
+              }
+            `}
+          </Script>
+          <Navigation />
+          <main className="flex-1 flex flex-col relative z-10">
+            {children}
+          </main>
+        </AccessibilityProvider>
+      </SessionProviderWrapper>
+    </body>
     </html>
   );
 }
+

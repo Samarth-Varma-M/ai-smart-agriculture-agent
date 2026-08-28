@@ -172,7 +172,7 @@ export default function Home() {
             </div>
             <Link 
               href="/studio"
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 py-2.5 rounded-lg font-extrabold text-xs tracking-wide shadow-md shadow-emerald-500/20 transition-all duration-200 shrink-0"
+              className="flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-6 py-3 rounded-lg font-extrabold text-xs tracking-wide shadow-md shadow-emerald-500/20 transition-all duration-200 shrink-0"
             >
               Open Studio Workspace →
             </Link>

@@ -1,8 +1,25 @@
 "use client";
 
-import { CloudRain, TrendingUp, Sun, Cloud, Wind, Activity, ShieldCheck, ShieldAlert, Sparkles, ArrowUpRight } from "lucide-react";
-import { useState } from "react";
+import { CloudRain, TrendingUp, Sun, Cloud, Wind, Activity, ShieldCheck, ShieldAlert, Sparkles, ArrowUpRight, Search, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { WeatherDay, MarketCommodity } from "@/lib/types";
+import { getWeatherData } from "@/app/actions/weather";
+
+const INDIAN_HUBS = [
+  "Delhi", "Mumbai", "Bengaluru", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad",
+  "Surat", "Jaipur", "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal", "Visakhapatnam",
+  "Patna", "Vadodara", "Ghaziabad", "Ludhiana", "Agra", "Nashik", "Faridabad", "Meerut",
+  "Rajkot", "Varanasi", "Srinagar", "Aurangabad", "Dhanbad", "Amritsar", "Allahabad", "Ranchi",
+  "Howrah", "Coimbatore", "Jabalpur", "Gwalior", "Vijayawada", "Jodhpur", "Madurai", "Raipur",
+  "Kota", "Guwahati", "Chandigarh", "Solapur", "Hubballi-Dharwad", "Guntur"
+];
+
+const CROPS = [
+  "Rice", "Wheat", "Cotton", "Sugarcane", "Maize", "Soybean", "Tomato", "Potato", "Onion",
+  "Groundnut", "Mango", "Banana", "Turmeric", "Chilli", "Mustard", "Millet", "Sorghum",
+  "Chickpea", "Pigeon Pea", "Coconut", "Tea", "Coffee", "Rubber", "Apple", "Grapes",
+  "Citrus", "Papaya", "Garlic", "Ginger", "Cabbage"
+];
 
 const WEATHER_MOCKS: Record<string, WeatherDay[]> = {
   "Nashik, Maharashtra": [
@@ -21,21 +38,61 @@ const WEATHER_MOCKS: Record<string, WeatherDay[]> = {
   ]
 };
 
-const MARKET_MOCKS: Record<string, MarketCommodity> = {
-  "Tomato": { price: "₹2,400/qtl", retailPrice: "₹24/kg", trend: "+12.4%", trendDesc: "Surging", direction: "up", advice: "High wholesale mandi demand. Consider harvesting early if mature.", arrivals: "450 tonnes/day" },
-  "Wheat": { price: "₹2,275/qtl", retailPrice: "₹22.7/kg", trend: "+0.8%", trendDesc: "Steady", direction: "flat", advice: "Prices holding steady near MSP. Harvest on scheduled cycle.", arrivals: "1,200 tonnes/day" },
-  "Maize": { price: "₹1,850/qtl", retailPrice: "₹18.5/kg", trend: "+6.2%", trendDesc: "Peaking", direction: "up", advice: "Market peaking due to poultry feed demand. Liquidate harvest now.", arrivals: "680 tonnes/day" },
-};
+const MARKET_MOCKS: Record<string, MarketCommodity> = CROPS.reduce((acc, crop) => {
+  acc[crop] = { 
+    price: `₹${(Math.random() * 5000 + 1000).toFixed(0)}/qtl`, 
+    retailPrice: `₹${(Math.random() * 50 + 20).toFixed(0)}/kg`, 
+    trend: `${Math.random() > 0.5 ? '+' : '-'}${(Math.random() * 10).toFixed(1)}%`, 
+    trendDesc: Math.random() > 0.5 ? "Surging" : "Steady", 
+    direction: Math.random() > 0.5 ? "up" : "flat", 
+    advice: "Current market dynamics indicate average supply. Monitor closely.", 
+    arrivals: `${(Math.random() * 1000 + 100).toFixed(0)} tonnes/day` 
+  };
+  return acc;
+}, {} as Record<string, MarketCommodity>);
 
 export default function MarketWeather() {
-  const [region, setRegion] = useState("Nashik, Maharashtra");
+  const [searchInput, setSearchInput] = useState("Nashik");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [region, setRegion] = useState("Nashik");
   const [crop, setCrop] = useState("Tomato");
+  const [forecast, setForecast] = useState<WeatherDay[]>(WEATHER_MOCKS["Nashik, Maharashtra"] || []);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
 
-  const forecast = WEATHER_MOCKS[region] || WEATHER_MOCKS["Nashik, Maharashtra"];
+  const filteredHubs = INDIAN_HUBS.filter(hub => hub.toLowerCase().includes(searchInput.toLowerCase()));
+
   const market = MARKET_MOCKS[crop] || MARKET_MOCKS["Tomato"];
   
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!searchInput.trim()) return;
+    
+    setWeatherLoading(true);
+    setWeatherError(null);
+    setRegion(searchInput);
+    
+    const res = await getWeatherData(searchInput);
+    if (res.error) {
+      setWeatherError(res.error);
+      // Fallback to mocks if available
+      if (WEATHER_MOCKS[searchInput]) {
+        setForecast(WEATHER_MOCKS[searchInput]);
+      }
+    } else if (res.forecast) {
+      setForecast(res.forecast);
+    }
+    
+    setWeatherLoading(false);
+  };
+
+  useEffect(() => {
+    handleSearch();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
   // Calculate spray window based on next 48 hours rain
-  const next48hRain = forecast[0].rain + forecast[1].rain;
+  const next48hRain = forecast.length >= 2 ? (forecast[0].rain || 0) + (forecast[1].rain || 0) : 0;
   const safeToSpray = next48hRain < 5;
 
   return (
@@ -55,16 +112,49 @@ export default function MarketWeather() {
 
       {/* Selectors Bar */}
       <div className="glass-card p-3.5 sm:p-4 rounded-xl border border-slate-800 flex flex-col sm:flex-row gap-3.5">
-        <div className="flex-1">
-          <label className="block text-[10px] font-mono font-medium text-slate-400 mb-1 uppercase tracking-wider">Meteorological Station</label>
-          <select 
-            value={region} 
-            onChange={e => setRegion(e.target.value)} 
-            className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors cursor-pointer"
-          >
-            <option value="Nashik, Maharashtra">Nashik, Maharashtra (Horticulture Hub)</option>
-            <option value="Pune, Maharashtra">Pune, Maharashtra (Western Ghats)</option>
-          </select>
+        <div className="flex-1 relative">
+          <label className="block text-[10px] font-mono font-medium text-slate-400 mb-1 uppercase tracking-wider">Meteorological Station / City</label>
+          <form onSubmit={handleSearch} className="relative flex items-center">
+            <input 
+              type="text"
+              value={searchInput} 
+              onChange={e => {
+                setSearchInput(e.target.value);
+                setShowDropdown(true);
+              }} 
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+              placeholder="Enter city name..."
+              className="w-full bg-slate-900 border border-slate-700/80 rounded-lg pl-3 pr-10 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors"
+            />
+            <button type="submit" disabled={weatherLoading} className="absolute right-2 text-cyan-400 hover:text-cyan-300 disabled:opacity-50 transition-colors">
+              {weatherLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+            </button>
+          </form>
+          
+          {showDropdown && filteredHubs.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+              {filteredHubs.map(hub => (
+                <div 
+                  key={hub} 
+                  className="px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-cyan-400 cursor-pointer transition-colors"
+                  onClick={() => {
+                    setSearchInput(hub);
+                    setShowDropdown(false);
+                    // auto search
+                    setTimeout(() => {
+                      const event = new Event('submit', { cancelable: true });
+                      handleSearch(event as unknown as React.FormEvent);
+                    }, 50);
+                  }}
+                >
+                  {hub}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {weatherError && <p className="text-red-400 text-[10px] mt-1">{weatherError}</p>}
         </div>
         <div className="flex-1">
           <label className="block text-[10px] font-mono font-medium text-slate-400 mb-1 uppercase tracking-wider">Target Commodity</label>
@@ -73,9 +163,7 @@ export default function MarketWeather() {
             onChange={e => setCrop(e.target.value)} 
             className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors cursor-pointer"
           >
-            <option value="Tomato">Tomato (Hybrid Fresh)</option>
-            <option value="Wheat">Wheat (Sharbati / Durum)</option>
-            <option value="Maize">Maize (Feed Grade)</option>
+            {CROPS.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>
